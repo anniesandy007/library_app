@@ -16,7 +16,9 @@ class RecommendationService {
         const { AutoTokenizer } = await import('@xenova/transformers');
         // Load tokenizer and ONNX session
         this.tokenizer = await AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2');
-        this.session = await ort.InferenceSession.create('./model.onnx'); // <--- Update this line if your model is in a 'models' folder
+        // Explicitly specify the CPU execution provider
+        const sessionOptions = { executionProviders: ['cpu'] };
+        this.session = await ort.InferenceSession.create('./model.onnx', sessionOptions);
         console.log('Tokenizer and ONNX model loaded.');
 
         // Fetch books from the database
