@@ -1,59 +1,62 @@
+// server.js
 const express = require("express");
 const mongoose = require("mongoose");
 const passport = require("passport");
 const bodyParser = require("body-parser");
-const LocalStrategy = require("passport-local");
-const passportLocalMongoose = require("passport-local-mongoose");
-const User = require("./model/User"); // Assuming User model exists
-const Book = require("./model/Book"); // Assuming Book model exists
+const LocalStrategy = require("passport-local").Strategy;
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
+const User = require("./model/User");
+const Book = require("./model/Book");
 const recommendationService = require("./recommendationService");
-const SampleCollectionBook = require("./model/SampleCollectionBook"); // Assuming SampleCollectionBook model exists
+const SampleCollectionBook = require("./model/SampleCollectionBook");
 
 const app = express();
 
+// --- Express Setup ---
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(__dirname + "/public"));
+
+// --- Session Store ---
 app.use(
-    require("express-session")({
-        secret: "Rusty is a dog",
+    session({
+        secret: process.env.SESSION_SECRET || "Rusty is a dog",
         resave: false,
         saveUninitialized: false,
+        store: MongoStore.create({
+            mongoUrl: process.env.MONGO_URI,
+            collectionName: "sessions",
+        }),
+        cookie: { secure: false }, // change to true if using HTTPS
     })
 );
 
+// --- Passport Setup ---
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(express.static(__dirname + "/public")); // Assuming a public directory exists
 
-// Add the admin local strategy
+// --- Admin Local Strategy ---
 passport.use(
     "admin-local",
-    new LocalStrategy(function (username, password, done) {
+    new LocalStrategy((username, password, done) => {
         if (username === "Admin" && password === "12345") {
-            return done(null, { username: "Aptech" });
+            return done(null, { username: "Admin" });
         }
         return done(null, false, { message: "Incorrect admin username or password" });
     })
 );
-passport.serializeUser(function (user, done) {
-    done(null, user);
-});
 
-passport.deserializeUser(function (user, done) {
-    done(null, user);
-});
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => done(null, user));
 
-// Showing home page
-app.get("/", function (req, res) {
-    res.render("home"); // Assuming a home.ejs view exists
-});
+// --- Routes ---
 
-// Showing register form
-app.get("/register", function (req, res) {
-    res.render("register"); // Assuming a register.ejs view exists
-});
+// Home
+app.get("/", (req, res) => res.render("home"));
 
-// Handling user signup
+// Register
+app.get("/register", (req, res) => res.render("register"));
 app.post("/register", async (req, res) => {
     try {
         const user = await User.create({
@@ -67,39 +70,25 @@ app.post("/register", async (req, res) => {
     }
 });
 
-// Showing login form
-app.get("/login", function (req, res) {
-    res.render("login"); // Assuming a login.ejs view exists
-});
-
-// Handling user login
-app.post("/login", async function (req, res) {
+// Login
+app.get("/login", (req, res) => res.render("login"));
+app.post("/login", async (req, res) => {
     try {
-        // check if the user exists
         const user = await User.findOne({ username: req.body.username });
-        if (user) {
-            // check if password matches
-            const result = req.body.password === user.password;
-            if (result) {
-                const books = await Book.find({});
-                res.render("booklist", { books: books }); // Assuming a booklist.ejs view exists
-            } else {
-                res.render("error", { errorMessage: "Password doesn't match" }); // Assuming an error.ejs view exists
-            }
+        if (user && req.body.password === user.password) {
+            const books = await Book.find({});
+            res.render("booklist", { books });
         } else {
-            res.render("error", { errorMessage: "User doesn't exist" });
+            res.render("error", { errorMessage: "Invalid username or password." });
         }
     } catch (error) {
-        res.render("error", { errorMessage: "An error occurred during login" });
+        console.error("Login error:", error);
+        res.render("error", { errorMessage: "An error occurred during login." });
     }
 });
 
-// Admin login route
-app.get("/admin", function (req, res) {
-    res.render("admin-login"); // Assuming an admin-login.ejs view exists
-});
-
-// Admin login form
+// Admin login
+app.get("/admin", (req, res) => res.render("admin-login"));
 app.post(
     "/admin-login",
     passport.authenticate("admin-local", {
@@ -107,23 +96,21 @@ app.post(
         failureRedirect: "/admin-error",
     })
 );
-// Admin error route
-app.get("/admin-error", function (req, res) {
-    res.render("admin-error", { errorMessage: "Incorrect admin username or password" }); // Assuming an admin-error.ejs view exists
+
+app.get("/admin-error", (req, res) =>
+    res.render("admin-error", { errorMessage: "Incorrect admin username or password" })
+);
+
+app.get("/admin-dashboard", (req, res) => {
+    if (req.isAuthenticated()) return res.render("admin-dashboard");
+    res.redirect("/admin");
 });
 
-// Admin dashboard route
-app.get("/admin-dashboard", function (req, res) {
-    if (req.isAuthenticated()) {
-        res.render("admin-dashboard"); // Assuming an admin-dashboard.ejs view exists
-    } else {
-        res.redirect("/admin");
-    }
-});
+// Add book
+app.post("/admin-dashboard/add-book", async (req, res) => {
+    if (!req.isAuthenticated()) return res.redirect("/admin");
 
-app.post("/admin-dashboard/add-book", function (req, res) {
-    if (req.isAuthenticated()) {
-        // Get book details from the form
+    try {
         const bookDetails = {
             Book_id: req.body.Book_id,
             Book_name: req.body.Book_name,
@@ -132,94 +119,75 @@ app.post("/admin-dashboard/add-book", function (req, res) {
             Age_group: req.body.Age_group,
             Book_type: req.body.Book_type,
         };
-
-        // Create a new book in the "books" collection
-        Book.create(bookDetails)
-            .then((newBook) => {
-                console.log("Book added successfully:", newBook);
-                res.redirect("/admin-dashboard"); 
-            })
-            .catch((err) => {
-                console.error("Failed to add the book:", err);
-                res.status(500).render("error", { errorMessage: "Failed to add the book to the database." });
-            });
-    } else {
-        res.redirect("/admin");
+        await Book.create(bookDetails);
+        res.redirect("/admin-dashboard");
+    } catch (error) {
+        console.error("Failed to add book:", error);
+        res.render("error", { errorMessage: "Failed to add the book." });
     }
 });
 
-// Show the recommendation search page
-app.get("/recommend", function (req, res) {
-    res.render("recommend", { books: [] }); // Assuming a recommend.ejs view exists
-});
-
-// Handle the recommendation logic
-app.post("/recommend", async function (req, res) {
+// Recommendation
+app.get("/recommend", (req, res) => res.render("recommend", { books: [] }));
+app.post("/recommend", async (req, res) => {
     try {
-        const userPrompt = req.body.prompt;
-        // Get recommendations using the new service
-        const recommendations = await recommendationService.getRecommendations(userPrompt);
-        // Render the results
+        const recommendations = await recommendationService.getRecommendations(req.body.prompt);
         res.render("recommend", { books: recommendations });
     } catch (error) {
         console.error("Recommendation error:", error);
-        res.status(500).render("error", { errorMessage: "An error occurred while generating recommendations." });
+        res.render("error", { errorMessage: "Failed to generate recommendations." });
     }
 });
 
-// Handle the chat prompt submission (assuming this refers to a chat/recommendation page)
-app.post("/chat", async function (req, res) {
+// Chat (similar to recommendation)
+app.post("/chat", async (req, res) => {
     try {
-        const userPrompt = req.body.prompt;
-        // Get recommendations using the recommendation service
-        const recommendations = await recommendationService.getRecommendations(userPrompt);
-        // Render the results on the same chat page
-        res.render("chat", { books: recommendations, prompt: userPrompt }); // Assuming a chat.ejs view exists
+        const recommendations = await recommendationService.getRecommendations(req.body.prompt);
+        res.render("chat", { books: recommendations, prompt: req.body.prompt });
     } catch (error) {
         console.error("Chat recommendation error:", error);
-        res.status(500).render("error", { errorMessage: "An error occurred while generating recommendations." });
+        res.render("error", { errorMessage: "Failed to generate chat recommendations." });
     }
 });
 
-// Handling user logout
-app.get("/logout", function (req, res) {
-    req.logout(function (err) {
-        if (err) {
-            return next(err);
-        }
+// Logout
+app.get("/logout", (req, res, next) => {
+    req.logout(err => {
+        if (err) return next(err);
         res.redirect("/");
     });
 });
 
+// Middleware to protect routes
 function isLoggedIn(req, res, next) {
     if (req.isAuthenticated()) return next();
     res.redirect("/login");
 }
 
+// --- Server Startup ---
 const port = process.env.PORT || 3000;
 
 async function startServer() {
     try {
-        // 1. Connect to MongoDB
-        await mongoose.connect("mongodb+srv://lindalarrissa91:linda91@cluster0.gktucwf.mongodb.net/Library?retryWrites=true&w=majority");
+        // Connect to MongoDB first
+        await mongoose.connect(process.env.MONGO_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
         console.log("MongoDB connected successfully.");
-        
-        // 2. Initialize the Recommendation Service
-        await recommendationService.init();
 
-        // 3. Start the Express server
-        // CRUCIAL FIX: Explicitly binding to '0.0.0.0' is required for containerized environments like Render.
-        app.listen(port, '0.0.0.0', () => {
-            console.log(`Server Has Started on port ${port}!`);
-        }).on('error', (err) => {
-            // Log any errors if the server fails to start (e.g., port already in use)
-            console.error("Express server failed to start:", err);
-            process.exit(1);
+        // Start Express server immediately
+        app.listen(port, "0.0.0.0", () => {
+            console.log(`Server is running on port ${port}`);
         });
 
+        // Initialize Recommendation Service asynchronously
+        recommendationService.init()
+            .then(() => console.log("Recommendation Service initialized."))
+            .catch(err => console.error("Failed to initialize recommendation service:", err));
+
     } catch (error) {
-        console.error("Failed to start the server:", error);
-        // Exit the process if initialization fails
+        console.error("Failed to start server:", error);
         process.exit(1);
     }
 }
