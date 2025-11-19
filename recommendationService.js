@@ -1,5 +1,5 @@
 const ort = require('onnxruntime-node');
-const { AutoTokenizer } = require('@xenova/transformers');
+const { AutoTokenizer } = await import('@xenova/transformers');
 const similarity = require('cosine-similarity');
 const SampleCollectionBook = require('./model/SampleCollectionBook');
 
