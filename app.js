@@ -6,10 +6,10 @@ const LocalStrategy = require("passport-local");
 const passportLocalMongoose = require("passport-local-mongoose");
 const User = require("./model/User");
 const Book = require("./model/Book");
+const recommendationService = require("./recommendationService");
+const SampleCollectionBook = require("./model/SampleCollectionBook");
 
 const app = express();
-
-mongoose.connect("mongodb+srv://lindalarrissa91:linda91@cluster0.gktucwf.mongodb.net/Library?retryWrites=true&w=majority");
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -24,7 +24,6 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(__dirname + "/public"));
-
 
 // Add the admin local strategy
 passport.use(
@@ -151,6 +150,40 @@ app.post("/admin-dashboard/add-book", function (req, res) {
   }
 });
 
+// Show the recommendation search page
+app.get("/recommend", function (req, res) {
+  res.render("recommend", { books: [] }); // Render with an empty books array initially
+});
+
+
+// Handle the recommendation logic
+app.post("/recommend", async function (req, res) {
+  try {
+    const userPrompt = req.body.prompt;
+    // Get recommendations using the new service
+    const recommendations = await recommendationService.getRecommendations(userPrompt);
+    // Render the results
+    res.render("recommend", { books: recommendations });
+  } catch (error) {
+    console.error("Recommendation error:", error);
+    res.status(500).send("An error occurred while generating recommendations.");
+  }
+});
+
+
+// Handle the chat prompt submission
+app.post("/chat", async function (req, res) {
+  try {
+    const userPrompt = req.body.prompt;
+    // Get recommendations using the recommendation service
+    const recommendations = await recommendationService.getRecommendations(userPrompt);
+    // Render the results on the same chat page
+    res.render("chat", { books: recommendations, prompt: userPrompt });
+  } catch (error) {
+    console.error("Chat recommendation error:", error);
+    res.status(500).send("An error occurred while generating recommendations.");
+  }
+});
 
 // Handling user logout
 app.get("/logout", function (req, res) {
@@ -168,6 +201,18 @@ function isLoggedIn(req, res, next) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, function () {
-  console.log("Server Has Started!");
-});
+
+async function startServer() {
+  try {
+    await mongoose.connect("mongodb+srv://lindalarrissa91:linda91@cluster0.gktucwf.mongodb.net/Library?retryWrites=true&w=majority");
+    console.log("MongoDB connected successfully.");
+    await recommendationService.init();
+    app.listen(port, () => {
+      console.log(`Server Has Started on port ${port}!`);
+    });
+  } catch (error) {
+    console.error("Failed to start the server:", error);
+  }
+}
+
+startServer();
