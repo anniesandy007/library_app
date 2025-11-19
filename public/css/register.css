@@ -1,0 +1,63 @@
+/* register.css */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: lightblue; /* Background color for the entire page */
+}
+
+h1 {
+    border: 2px #eee solid;
+    color: brown;
+    text-align: center;
+    padding: 10px;
+    margin: 0; /* Add this line to remove any default margin */
+}
+
+.container {
+    display: flex;
+    flex-direction: column; /* Change to a column layout */
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    text-align: center; /* Center-align the content */
+}
+
+.form-table {
+    background-color: #fff; /* Background color for the form container */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table td {
+    padding: 10px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007BFF; /* Button background color */
+    color: #fff; /* Button text color */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3; /* Button background color on hover */
+}
+
