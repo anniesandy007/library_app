@@ -1,5 +1,4 @@
 const ort = require('onnxruntime-node');
-const { AutoTokenizer } = await import('@xenova/transformers');
 const similarity = require('cosine-similarity');
 const SampleCollectionBook = require('./model/SampleCollectionBook');
 
@@ -14,9 +13,10 @@ class RecommendationService {
     // 1. Initialize the model and pre-compute book embeddings
     async init() {
         console.log('Initializing Recommendation Service...');
+        const { AutoTokenizer } = await import('@xenova/transformers');
         // Load tokenizer and ONNX session
         this.tokenizer = await AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2');
-    this.session = await ort.InferenceSession.create('./model.onnx'); // <--- Update this line if your model is in a 'models' folder
+        this.session = await ort.InferenceSession.create('./model.onnx'); // <--- Update this line if your model is in a 'models' folder
         console.log('Tokenizer and ONNX model loaded.');
 
         // Fetch books from the database
