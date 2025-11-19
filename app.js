@@ -9,7 +9,7 @@ const Book = require("./model/Book");
 
 const app = express();
 
-mongoose.connect("mongodb://localhost:27017/Library");
+mongoose.connect("mongodb+srv://lindalarrissa91:linda91@cluster0.gktucwf.mongodb.net/Library?retryWrites=true&w=majority");
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
