@@ -134,7 +134,7 @@ class RecommendationService {
 
         // Fetch books from the database
         try {
-            this.books = await SampleCollectionBook.find({}).lean(); // Use .lean() for faster, plain JavaScript objects
+            this.books = await SampleCollectionBook.find({}).limit(500).lean(); // Use .lean() for faster, plain JavaScript objects
         } catch (error) {
             console.error("Error fetching books:", error);
             this.books = []; 
