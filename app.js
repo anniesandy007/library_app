@@ -8,6 +8,7 @@ const User = require("./model/User"); // Assuming User model exists
 const Book = require("./model/Book"); // Assuming Book model exists
 const recommendationService = require("./recommendationService");
 const SampleCollectionBook = require("./model/SampleCollectionBook"); // Assuming SampleCollectionBook model exists
+const geminiService = require('./geminiService');
 
 const app = express();
 
@@ -15,14 +16,15 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
     require("express-session")({
-        secret: "Rusty is a dog",
-        resave: false,
-        saveUninitialized: false,
+      secret: "Rusty is a dog",
+      resave: false,
+      saveUninitialized: false,
     })
-);
+); 
 
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(express.json()); // Middleware to parse JSON bodies
 app.use(express.static(__dirname + "/public")); // Assuming a public directory exists
 
 // Add the admin local strategy
@@ -68,7 +70,7 @@ app.post("/register", async (req, res) => {
 });
 
 // Showing login form
-app.get("/login", function (req, res) {
+app.get("/login", function(req, res) {
     res.render("login"); // Assuming a login.ejs view exists
 });
 
@@ -95,7 +97,7 @@ app.post("/login", async function (req, res) {
 });
 
 // Admin login route
-app.get("/admin", function (req, res) {
+app.get("/admin", function(req, res) {
     res.render("admin-login"); // Assuming an admin-login.ejs view exists
 });
 
@@ -103,13 +105,14 @@ app.get("/admin", function (req, res) {
 app.post(
     "/admin-login",
     passport.authenticate("admin-local", {
-        successRedirect: "/admin-dashboard",
-        failureRedirect: "/admin-error",
+      successRedirect: "/admin-dashboard",
+      failureRedirect: "/admin-error",
     })
 );
 // Admin error route
 app.get("/admin-error", function (req, res) {
-    res.render("admin-error", { errorMessage: "Incorrect admin username or password" }); // Assuming an admin-error.ejs view exists
+    res.render("admin-error", { errorMessage: "Incorrect admin username or password" });
+
 });
 
 // Admin dashboard route
@@ -181,6 +184,53 @@ app.post("/chat", async function (req, res) {
     }
 });
 
+// === ROUTES FOR GEMINI CHAT ===
+
+// 1. Route to render the chat page
+app.get('/gemini-chat', (req, res) => {
+    res.render('geminiChat'); // Renders views/geminiChat.ejs
+});
+
+// 2. Route to handle the chat POST request
+app.post('/gemini-chat', async (req, res) => {
+    try {
+        const { prompt } = req.body;
+        // console.log('Server received prompt:', prompt); // Add this line to check what the server gets
+        if (!prompt) {
+            return res.status(400).json({ error: 'Prompt is required' });
+        }
+
+        // Step 1: Get a shortlist of relevant books from your database
+        const bookRecommendations = await recommendationService.getRecommendations(prompt);
+        const topBooks = bookRecommendations.slice(0, 5); // Let's use the top 5
+
+        // Step 2: Create an enhanced prompt for Gemini with context from your library
+        let enhancedPrompt;
+        if (topBooks.length > 0) {
+            const bookListForPrompt = topBooks.map(book => `- "${book.title}" by ${book.authors}`).join('\n');
+            enhancedPrompt = `You are a helpful librarian for a local library. Your primary role is to assist users in finding books from our collection. A user is asking for book recommendations related to: "${prompt}".
+
+Based on a search of the library's catalog, here are some relevant books available:
+${bookListForPrompt}
+
+Please provide a friendly, conversational response. Recommend one or two of these specific books and briefly explain why they are a good match for the user's request. Do not suggest any books that are not on this list. If the user asks a question unrelated to book recommendations from our catalog, politely state that you can only assist with finding books.`;
+        } else {
+            enhancedPrompt = `You are a helpful librarian for a local library. Your primary role is to assist users in finding books from our collection. A user is asking for book recommendations related to: "${prompt}".
+
+Unfortunately, a search of the library's catalog did not return any specific matches for "${prompt}". Please provide a friendly, conversational response informing the user about this. Politely suggest they try a different search term or ask about another type of book. Do not discuss general topics or answer questions unrelated to our library's collection.`;
+        }
+
+        // Step 3: Get a smart, conversational response from Gemini
+        const geminiResponse = await geminiService.postPrompt(enhancedPrompt);
+        res.json({ response: geminiResponse });
+
+    } catch (error) {
+        console.error('Error in /gemini-chat route:', error);
+        res.status(500).json({ error: 'Failed to get response from Gemini' });
+    }
+});
+
+
 // Handling user logout
 app.get("/logout", function (req, res) {
     req.logout(function (err) {
@@ -196,7 +246,7 @@ function isLoggedIn(req, res, next) {
     res.redirect("/login");
 }
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 
 async function startServer() {
     try {
