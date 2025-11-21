@@ -7,7 +7,7 @@ const passportLocalMongoose = require("passport-local-mongoose");
 const User = require("./model/User"); // Assuming User model exists
 const Book = require("./model/Book"); // Assuming Book model exists
 const recommendationService = require("./recommendationService");
-const SampleCollectionBook = require("./model/SampleCollectionBook"); // Assuming SampleCollectionBook model exists
+const tensorflowService = require("./tensorflowService"); // Import the new TensorFlow.js service
 const geminiService = require('./geminiService');
 
 const app = express();
@@ -230,6 +230,47 @@ Unfortunately, a search of the library's catalog did not return any specific mat
     }
 });
 
+// === ROUTES FOR TENSORFLOW.JS CHAT ===
+
+// 1. Route to render the TensorFlow.js chat page
+app.get('/tensorflow-chat', (req, res) => {
+    // Just render the chat page. The history will be handled by client-side JavaScript.
+    res.render('tensorflowChat'); // Renders views/tensorflowChat.ejs
+});
+
+// 2. Route to handle the TensorFlow.js chat POST request (as an API endpoint)
+app.post('/tensorflow-chat', async (req, res) => {
+    try {
+        const { prompt } = req.body; // Expecting JSON: { "prompt": "..." }
+        if (!prompt) {
+            return res.status(400).json({ error: 'Prompt is required' });
+        }
+
+        // Get recommendations using the TensorFlow.js service
+        const recommendations = await tensorflowService.getRecommendations(prompt);
+
+        // Create a conversational response
+        let responseMessage;
+        if (recommendations.length > 0) {
+            const bookTitles = recommendations.map(book => `"${book.title}" by ${book.authors}`).join(', ');
+            responseMessage = `Based on your query, I recommend: ${bookTitles}.`;
+        } else {
+            responseMessage = `I couldn't find any specific book recommendations for "${prompt}" in our library. Please try a different query.`;
+        }
+
+        // Send the response back as JSON to the client-side script
+        res.json({
+            response: responseMessage,
+            books: recommendations
+        });
+
+    } catch (error) {
+        console.error('Error in /tensorflow-chat API route:', error);
+        res.status(500).json({ error: 'Failed to get response from TensorFlow.js service' });
+    }
+});
+
+
 
 // Handling user logout
 app.get("/logout", function (req, res) {
@@ -269,6 +310,12 @@ async function startServer() {
         recommendationService.init().catch(err => {
             console.error("Background Recommendation Service Initialization Failed:", err);
             // Non-fatal, the app can still serve non-recommendation routes
+        });
+
+        // 4. Initialize the TensorFlow.js Service in the BACKGROUND.
+        console.log("Starting TensorFlow.js Service Initialization in the background...");
+        tensorflowService.init().catch(err => {
+            console.error("Background TensorFlow.js Service Initialization Failed:", err);
         });
 
     } catch (error) {

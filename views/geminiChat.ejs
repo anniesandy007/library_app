@@ -17,6 +17,7 @@
         #send-button:disabled { background-color: #94d3a2; cursor: not-allowed; }
         .loading-indicator { text-align: center; padding: 10px; color: #888; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
 
@@ -52,21 +53,16 @@
             showLoading(true);
 
             try {
-                // Send prompt to your backend
-                const response = await fetch('/gemini-chat', { // This route needs to be created in your Express app
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ prompt: prompt }),
+                // Send prompt to your backend using axios
+                const response = await axios({
+                    method: 'post',
+                    url: '/gemini-chat',
+                    data: { prompt: prompt },
+                    headers: { 'Content-Type': 'application/json' }
                 });
 
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                const data = await response.json();
-                addMessage(data.response, 'gemini-message');
+                // The response data is directly available in response.data
+                addMessage(response.data.response, 'gemini-message');
 
             } catch (error) {
                 console.error('Error:', error);

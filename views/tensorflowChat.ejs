@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TensorFlow.js Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Roboto', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; }
+        h1 { color: #333; }
+        #chat-container { background-color: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px; height: 60vh; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 15px; }
+        .message-wrapper { display: flex; align-items: flex-start; gap: 10px; max-width: 85%; }
+        .message { padding: 10px 15px; border-radius: 18px; line-height: 1.5; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 500; color: white; flex-shrink: 0; }
+        
+        /* User Message */
+        .user-message-wrapper { align-self: flex-end; flex-direction: row-reverse; }
+        .user-message .message { background-color: #007bff; color: white; }
+        .user-message .avatar { background-color: #0056b3; }
+
+        /* Bot Message */
+        .bot-message-wrapper { align-self: flex-start; }
+        .bot-message .message { background-color: #e9e9eb; color: #333; }
+        .bot-message .avatar { background-color: #5c6bc0; }
+
+        #chat-form { display: flex; }
+        #prompt-input { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px 0 0 20px; font-size: 16px; outline: none; }
+        #prompt-input:focus { border-color: #007bff; }
+        button { padding: 12px 20px; background-color: #007bff; color: white; border: none; border-radius: 0 20px 20px 0; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+
+        .book-list { list-style-type: none; padding-left: 0; margin-top: 10px; }
+        .book-list li { background-color: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 5px; margin-bottom: 5px; }
+        .book-list li strong { display: block; color: #333; }
+        .bot-message p { margin: 0; }
+
+        /* Loader */
+        #loading-indicator {
+            display: flex;
+            justify-content: center;
+            padding: 15px;
+        }
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-left-color: #5c6bc0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>TensorFlow.js Book Chat</h1>
+    <p>Ask for a book recommendation. The chat history will be cleared if you refresh the page.</p>
+
+    <div id="chat-container">
+        <!-- Chat messages will be added here dynamically -->
+        <div class="message-wrapper bot-message-wrapper">
+            <div class="avatar">Bot</div>
+            <div class="message-content bot-message">
+                <div class="message">
+                    <p>How can I help you today?</p>
+                </div>
+            </div>
+        </div>
+        <div id="loading-indicator" style="display: none;"><div class="spinner"></div></div>
+    </div>
+
+    <form id="chat-form">
+        <input type="text" id="prompt-input" placeholder="e.g., books about space travel" autocomplete="off" required>
+        <button type="submit">Send</button>
+    </form>
+
+    <script>
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('prompt-input');
+        const chatContainer = document.getElementById('chat-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent the default form submission (page reload)
+
+            const userPrompt = input.value.trim();
+            if (!userPrompt) return;
+
+            // 1. Display the user's message immediately
+            addUserMessage(userPrompt);
+            input.value = ''; // Clear the input field
+            loadingIndicator.style.display = 'block'; // Show loader
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to show loader
+
+            try {
+                // 2. Send the prompt to the server API                
+                const response = await fetch('/tensorflow-chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: userPrompt }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+
+                // 3. Display the bot's response
+                addBotMessage(data);
+            } catch (error) {
+                console.error('Error fetching recommendation:', error);
+                addBotMessage({ response: 'Sorry, something went wrong. Please try again.' });
+            } finally {
+                // Always hide the loader, regardless of success or failure
+                loadingIndicator.style.display = 'none';
+            }
+        });
+
+        function addUserMessage(text) {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('message-wrapper', 'user-message-wrapper');
+            wrapper.innerHTML = `
+                <div class="message-content user-message">
+                    <div class="message">${text}</div>
+                </div>
+                <div class="avatar">You</div>
+            `;
+            chatContainer.appendChild(wrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addBotMessage(data) {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('message-wrapper', 'bot-message-wrapper');
+
+            const messageContent = document.createElement('div');
+            messageContent.classList.add('message-content', 'bot-message');
+
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+
+            // Add the main text response
+            const textElement = document.createElement('p');
+            textElement.textContent = data.response;
+            messageDiv.appendChild(textElement);
+
+            // If there are books, create and add a formatted list
+            if (data.books && data.books.length > 0) {
+                const bookList = document.createElement('ul');
+                bookList.classList.add('book-list');
+                data.books.forEach(book => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<strong>${book.title}</strong> by ${book.authors || 'N/A'}`;
+                    bookList.appendChild(listItem);
+                });
+                messageDiv.appendChild(bookList);
+            }
+            
+            messageContent.appendChild(messageDiv);
+            wrapper.innerHTML = '<div class="avatar">Bot</div>';
+            wrapper.appendChild(messageContent);
+
+            chatContainer.appendChild(wrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
