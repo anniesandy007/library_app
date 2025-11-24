@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<!-- <link rel="stylesheet" type="text/css" href="/css/bookstyle.css"> -->
-     <link rel="stylesheet" type="text/css" href="/css/bookstyle.css">
+    <!-- <link rel="stylesheet" type="text/css" href="/css/bookstyle.css"> -->
+    <link rel="stylesheet" type="text/css" href="/css/bookstyle.css">
     <style>
         .nav-button {
             display: inline-block;
@@ -15,46 +15,58 @@
             background-color: #007bff;
             border-radius: 5px;
         }
+
+        .logout-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            font-size: 16px;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .logout-link:hover {
+            text-decoration: underline;
+        }
     </style>
     <title>List of Books</title>
 </head>
 <body>
 <div class="content">
-<div class="container">
+    <div class="container">
+        <div class="column1">
+            <h1>List of Books</h1>
+            <table class="center">
+                <tr>    
+                    <th>Book ID</th>
+                    <th>Book </th>
+                    <th>Author </th>
+                    <th>Price</th>
+                    <th>Age Group</th>
+                    <th>Book Type</th>
+                </tr>   
+                <% books.forEach(function(book) { %>
+                    <tr>
+                        <td style="text-align: center"><%= book.Book_id %></td> 
+                        <td style="text-align: center"><%= book.Book_name %></td>
+                        <td style="text-align: center"><%= book.Author_name %></td>      
+                        <td style="text-align: center"><%= book.Price %></td> 
+                        <td style="text-align: center"> <%= book.Age_group %></td> 
+                        <td style="text-align: center"> <%= book.Book_type %></td> 
+                    </tr>            
+                <% }); %>
+            </table>
 
-  <div class="column1">
-    <h1>List of Books</h1>
-    <table class="center">
-<tr>    
-    <th>Book ID</th>
-    <th>Book </th>
-    <th>Author </th>
-    <th>Price</th>
-    <th>Age Group</th>
-    <th>Book Type</th>
-  </tr>   
-        <% books.forEach(function(book) { %>
-            
-		<tr>
-		<td style="text-align: center"><%= book.Book_id %></td> 
-		<td style="text-align: center"><%= book.Book_name %></td>
-		<td style="text-align: center"><%= book.Author_name %></td>      
-		<td style="text-align: center"><%= book.Price %></td> 
-		<td style="text-align: center"> <%= book.Age_group %></td> 
-		<td style="text-align: center"> <%= book.Book_type %></td> 
-        	</tr>            
-        <% }); %>
-    </table>
- </div>
-</div>
- 
- <div style="text-align: center; margin-top: 20px;">
-    <a href="/recommend" class="nav-button">Recommedations</a>
-    <a href="/gemini-chat" class="nav-button">Gemini Chat</a>
-    <a href="/tensorflow-chat" class="nav-button">TensorFlow Chat</a>
-</div>
+            <!-- Buttons below table -->
+            <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px;">
+                <a href="/gemini-chat" class="nav-button">Gemini Chat</a>
+                <a href="/tensorflow-chat" class="nav-button">TensorFlow Chat</a>
+            </div>
 
+            <!-- Logout link -->
+            <a href="/logout" class="logout-link">Logout</a>
+        </div>
+    </div>
 </div>
-<p><a href="/logout">Logout</a></p>
 </body>
 </html>
