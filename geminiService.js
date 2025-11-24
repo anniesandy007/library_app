@@ -2,7 +2,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
 
 // Use environment variable for API key
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyA9aCK7axQLp-myR7uYHCTSEIOaqgjxrrc";
 if (!GEMINI_API_KEY) {
   console.error("Error: GEMINI_API_KEY environment variable not set!");
   process.exit(1);
