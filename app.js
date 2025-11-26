@@ -210,51 +210,9 @@ app.post('/gemini-chat', async (req, res) => {
             return res.status(400).json({ error: 'Prompt is required' });
         }
 
-        // Step 1: Get a shortlist of relevant books from your database
-        // Simple keyword search to find relevant books.
-        const allBooks = await SampleCollectionBook.find({});
-        const keywords = prompt.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-
-        let topBooks = [];
-        if (keywords.length > 0) {
-            const scoredBooks = allBooks.map(book => {
-                const title = book.title.toLowerCase();
-                const authors = book.authors.toLowerCase();
-                let score = 0;
-
-                keywords.forEach(keyword => {
-                    if (title.includes(keyword)) score += 2;
-                    if (authors.includes(keyword)) score += 1;
-                });
-
-                return { book, score };
-            }).filter(item => item.score > 0)
-              .sort((a, b) => b.score - a.score);
-
-            topBooks = scoredBooks.slice(0, 5).map(item => ({
-                title: item.book.title,
-                authors: item.book.authors,
-            }));
-        }
-
-        // Step 2: Create an enhanced prompt for Gemini with context from your library
-        let enhancedPrompt;
-        if (topBooks.length > 0) {
-            const bookListForPrompt = topBooks.map(book => `- "${book.title}" by ${book.authors}`).join('\n');
-            enhancedPrompt = `You are a helpful librarian for a local library. Your primary role is to assist users in finding books from our collection. A user is asking for book recommendations related to: "${prompt}".
-
-Based on a search of the library's catalog, here are some relevant books available:
-${bookListForPrompt}
-
-Please provide a friendly, conversational response. Recommend one or two of these specific books and briefly explain why they are a good match for the user's request. Do not suggest any books that are not on this list. If the user asks a question unrelated to book recommendations from our catalog, politely state that you can only assist with finding books.`;
-        } else {
-            enhancedPrompt = `You are a helpful librarian for a local library. Your primary role is to assist users in finding books from our collection. A user is asking for book recommendations related to: "${prompt}".
-
-Unfortunately, a search of the library's catalog did not return any specific matches for "${prompt}". Please provide a friendly, conversational response informing the user about this. Politely suggest they try a different search term or ask about another type of book. Do not discuss general topics or answer questions unrelated to our library's collection.`;
-        }
-
-        // Step 3: Get a smart, conversational response from Gemini
-        const geminiResponse = await geminiService.postPrompt(enhancedPrompt);
+        // === New Approach: Direct chat with Gemini ===
+        // Send the user's prompt directly to the Gemini service for a general response.
+        const geminiResponse = await geminiService.postPrompt(prompt);
         res.json({ response: geminiResponse });
 
     } catch (error) {

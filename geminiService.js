@@ -1,39 +1,58 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
 
 // Use environment variable for API key
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyA9aCK7axQLp-myR7uYHCTSEIOaqgjxrrc";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 if (!GEMINI_API_KEY) {
   console.error("Error: GEMINI_API_KEY environment variable not set!");
   process.exit(1);
 }
 
-// Initialize the GoogleGenerativeAI client with the API key.
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+// Define the API URL for the Gemini REST endpoint
+const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 /**
- * Sends a prompt to Gemini API and returns the generated text.
+ * Sends a prompt to the Gemini REST API and returns the generated text.
  * @param {string} prompt - The text prompt to send
  * @returns {Promise<string>} - Generated content from Gemini
  */
 async function postPrompt(prompt) {
+  const requestBody = {
+    contents: [{
+      parts: [{ text: prompt }]
+    }],
+  };
+
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    return text;
-  } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    if (error.response) {
-      console.error("Gemini API Error Response Data:", error.response.data);
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // The API key is passed in a specific header for REST calls
+        'x-goog-api-key': GEMINI_API_KEY
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      // Handle API errors (e.g., bad request, invalid key, rate limit)
+      const errorData = await response.json();
+      throw new Error(`API Error: ${response.status} - ${errorData.error.message}`);
     }
+
+    const jsonResponse = await response.json();
+
+    // Manually navigate the nested JSON structure to find the text
+    const generatedText = jsonResponse.candidates[0].content.parts[0].text;
+    return generatedText;
+
+  } catch (error) {
+    console.error("REST Call Error:", error.message);
     throw error;
   }
 }
 
 /**
- * Shortcut function for compatibility with older code
+ * Shortcut function for backward compatibility.
  */
 async function getGeneratedText(prompt) {
   return postPrompt(prompt);
