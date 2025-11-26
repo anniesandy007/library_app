@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 // Use environment variable for API key
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyCfyYHLXi68ZjlhrqE7vBEbqvaEoUyPTwQ";
 if (!GEMINI_API_KEY) {
   console.error("Error: GEMINI_API_KEY environment variable not set!");
   process.exit(1);
