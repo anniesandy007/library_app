@@ -77,7 +77,6 @@ app.get("/login", function (req, res) {
 });
 
 // Handling user login
-// Handling user login
 app.post("/login", async function (req, res) {
   try {
     // check if the user exists
@@ -201,7 +200,6 @@ app.get('/gemini-chat', (req, res) => {
 });
 
 // 2. Route to handle the chat POST request
-// 2. Route to handle the chat POST request
 app.post('/gemini-chat', async (req, res) => {
     try {
         const { prompt } = req.body;
@@ -210,9 +208,8 @@ app.post('/gemini-chat', async (req, res) => {
             return res.status(400).json({ error: 'Prompt is required' });
         }
 
-        // === New Approach: Direct chat with Gemini ===
-        // Send the user's prompt directly to the Gemini service for a general response.
-        const geminiResponse = await geminiService.postPrompt(prompt);
+        // Use the function that fetches books from the DB and then calls Gemini
+        const geminiResponse = await geminiService.generateBookRecommendations(prompt);
         res.json({ response: geminiResponse });
 
     } catch (error) {
