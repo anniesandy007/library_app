@@ -117,6 +117,17 @@ app.get("/booklist", isLoggedIn, async (req, res) => {
 
 app.get("/admin", (req, res) => res.render("admin-login"));
 
+passport.use(
+  "admin-local",
+  new LocalStrategy((username, password, done) => {
+    if (username === "Admin" && password === "12345") {
+      return done(null, { username: "Admin", isAdmin: true });
+    }
+    return done(null, false, { message: "Incorrect admin credentials" });
+  })
+);
+
+
 app.post(
   "/admin-login",
   passport.authenticate("admin-local", {
