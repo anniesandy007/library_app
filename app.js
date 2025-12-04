@@ -80,14 +80,27 @@ app.post("/register", async (req, res) => {
 
 app.get("/login", (req, res) => res.render("login"));
 
-app.post(
-  "/login",
-  passport.authenticate("local", { failureRedirect: "/login" }),
-  async (req, res) => {
-    const books = await Book.find({}).limit(15);
-    res.render("booklist", { books });
-  }
-);
+app.post("/login", (req, res, next) => {
+  passport.authenticate("local", async (err, user, info) => {
+    if (err) {
+      return res.render("error", { errorMessage: "Server error. Please try again." });
+    }
+
+    if (!user) {
+      return res.render("error", { errorMessage: info.message || "Invalid credentials." });
+    }
+
+    req.logIn(user, async (err) => {
+      if (err) {
+        return res.render("error", { errorMessage: "Login failed. Try again." });
+      }
+
+      const books = await Book.find({}).limit(15);
+      return res.render("booklist", { books });
+    });
+  })(req, res, next);
+});
+
 
 app.get("/logout", (req, res, next) => {
   req.logout((err) => (err ? next(err) : res.redirect("/")));
