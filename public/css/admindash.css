@@ -1,76 +1,97 @@
-/* admin-dashboard.css */
-body {
+body, html {
     margin: 0;
     padding: 0;
+    height: 100%;
     font-family: Arial, sans-serif;
-    background-color: lightblue;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center; /* Center both horizontally and vertically */
-    min-height: 100vh;
 }
 
 .container {
     display: flex;
-    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+}
+
+.left {
+    flex: 7; /* 70% */
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
     align-items: center;
-    width: 100%;
-    max-width: 1000px;
-    margin: 0 auto;
 }
 
-h1 {
-    border: 2px #eee solid;
-    color: brown;
+.left img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.right {
+    flex: 5;
+    background-color: #f5e9d7;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+/* White popup box */
+.form-table {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 70%;
+    max-width: 500px;
     text-align: center;
-    padding: 10px;
-    margin: 0;
 }
 
-form {
-    width: 60%;
+/* Title styling */
+h1 {
+    margin: 0 0 25px 0;
+    padding: 6px 12px;
+    color: #333;
 }
 
+/* Table layout */
 table {
-    border-collapse: collapse;
     width: 100%;
-    margin: 20px auto;
+    border-collapse: collapse;
 }
 
 table td {
-    padding: 10px;
-}
-
-label {
-    font-weight: bold;
-    display: block;
+    padding: 10px 0;
     text-align: left;
 }
 
+/* Inputs */
 input {
     width: 100%;
-    padding: 10px;
-    margin: 5px 0;
+    padding: 12px;
+    margin-top: 6px;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 5px;
 }
 
-
-
-.center-button-container {
-    text-align: center; /* Center horizontally */
-    margin-top: 20px; /* Adjust the top margin as needed */
-
-}
-
-.center-button {
-    width: 150px; /* Adjust the width as needed */
-    height: 50px; /* Adjust the height as needed */
-    background-color: #007BFF; /* Blue background color */
-    color: #fff;
+/* Button matching brown theme */
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #c49b6a;
+    color: white;
     border: none;
+    border-radius: 5px;
     cursor: pointer;
+    transition: 0.3s;
 }
 
+button:hover {
+    background-color: #a67c52;
+}
 
+/* Home / Logout link */
+p a {
+    text-decoration: none;
+    color: #333;
+    margin-top: 15px;
+    display: inline-block;
+}

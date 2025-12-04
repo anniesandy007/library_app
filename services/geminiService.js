@@ -1,6 +1,6 @@
-const Book = require('./model/SampleCollectionBook');
+const Book = require('../model/Book');
 
-const GEMINI_API_KEY = "AIzaSyB2q9O8xkqc4GJKtOhjZKCmXoFesnkisE8";
+const GEMINI_API_KEY = "AIzaSyCv4QDCNQrd5n0Gtkt_RneMu1ZudjU7kWU";
 if (!GEMINI_API_KEY) {
   console.error("Error: GEMINI_API_KEY not set!");
   process.exit(1);
@@ -22,7 +22,7 @@ async function postPrompt(prompt, bookCollection) {
   if (bookCollection && bookCollection.length > 0) {
 
     const bookDetails = bookCollection
-      .map(book => `${book.title} by ${book.authors}: ${book.description}`)
+      .map(book => `${book.title} by ${book.authors}`)
       .join('\n');
 
     combinedPrompt = `You are a helpful and friendly library guide. Your goal is to help readers find books from our library's collection.

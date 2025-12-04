@@ -1,16 +1,16 @@
 const mongoose = require("mongoose");
 
-// Define the book schema
-const bookSchema = new mongoose.Schema({
-  Book_id: Number,
-  Book_name: String,
-  Author_name: String,
-  Price: String, // Assuming price is a number
-  Age_group: String,
-  Book_type: String,
+const bookForAiSchema = new mongoose.Schema({
+  bookID: Number,
+  title: String,
+  authors: String,
+  average_rating: Number,
+  ratings_count: Number,
+  text_reviews_count: Number,
+  publication_date: String,
+  publisher: String,
 });
 
-// Create the "Book" model
-const Book = mongoose.model("Book", bookSchema);
+const BookForAi = mongoose.model("BookForAi", bookForAiSchema, "booksforai");
 
-module.exports = Book;
+module.exports = BookForAi;

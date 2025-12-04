@@ -1,106 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Chat</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; }
-        #chat-container { max-width: 800px; margin: auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; height: 80vh; }
-        #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; border-bottom: 1px solid #ddd; }
-        .message { margin-bottom: 15px; padding: 10px 15px; border-radius: 18px; max-width: 70%; line-height: 1.5; }
-        .user-message { background-color: #007bff; color: white; align-self: flex-end; margin-left: auto; }
-        .gemini-message { background-color: #e9e9eb; color: #333; align-self: flex-start; }
-        #chat-form { display: flex; padding: 20px; }
-        #prompt-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; margin-right: 10px; font-size: 16px; }
-        #send-button { padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 20px; cursor: pointer; font-size: 16px; }
-        #send-button:disabled { background-color: #94d3a2; cursor: not-allowed; }
-        .loading-indicator { text-align: center; padding: 10px; color: #888; }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gemini Chat</title>
+<link rel="stylesheet" href="/css/chat.css">
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
+    <!-- Back Button -->
+<!-- Flex container for back button and header -->
+<div class="chat-header">
+    <button class="back-button" onclick="goBack()">← Back</button>
+    <h1>Gemini AI Chat</h1>
+</div>
 
-    <div id="chat-container">
-        <div id="chat-window">
-            <div class="message gemini-message">
-                Hello! How can I help you today?
-            </div>
-        </div>
-        <form id="chat-form">
-            <input type="text" id="prompt-input" placeholder="Ask Gemini anything..." autocomplete="off">
-            <button type="submit" id="send-button">Send</button>
-        </form>
+
+<div id="chat-container">
+    <!-- Chat messages -->
+    <div id="chat-window">
+        <div class="gemini-message message">Hello! How can I help you today?</div>
     </div>
 
-    <script>
-        const form = document.getElementById('chat-form');
-        const input = document.getElementById('prompt-input');
-        const sendButton = document.getElementById('send-button');
-        const chatWindow = document.getElementById('chat-window');
+    <!-- Loading indicator -->
+    <div class="loading-indicator" style="display:none;">Gemini is thinking...</div>
 
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Prevent page reload
+    <!-- Input form inside same container -->
+    <form id="chat-form">
+        <input type="text" id="prompt-input" placeholder="Ask Gemini anything..." autocomplete="off">
+        <button type="submit" id="send-button">Send</button>
+    </form>
+</div>
 
-            const prompt = input.value.trim();
-            if (!prompt) return;
-            console.log('Client sending prompt:', prompt); // Add this line to check what the client sends
+<script>
+const form = document.getElementById('chat-form');
+const input = document.getElementById('prompt-input');
+const sendButton = document.getElementById('send-button');
+const chatWindow = document.getElementById('chat-window');
+const loadingIndicator = document.querySelector('.loading-indicator');
 
-            // Disable form and display user message
-            sendButton.disabled = true;
-            input.value = '';
-            addMessage(prompt, 'user-message');
-            showLoading(true);
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const prompt = input.value.trim();
+    if (!prompt) return;
 
-            try {
-                // Send prompt to your backend using axios
-                const response = await axios({
-                    method: 'post',
-                    url: '/gemini-chat',
-                    data: { prompt: prompt },
-                    headers: { 'Content-Type': 'application/json' }
-                });
+    addMessage(prompt, 'user-message');
+    input.value = '';
+    sendButton.disabled = true;
+    loadingIndicator.style.display = 'block';
+    chatWindow.scrollTop = chatWindow.scrollHeight;
 
-                // The response data is directly available in response.data
-                addMessage(response.data.response, 'gemini-message');
+    try {
+        const response = await axios.post('/gemini-chat', { prompt });
+        addMessage(response.data.response, 'gemini-message');
+    } catch (err) {
+        console.error(err);
+        addMessage('Sorry, something went wrong.', 'gemini-message');
+    } finally {
+        sendButton.disabled = false;
+        loadingIndicator.style.display = 'none';
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+});
 
-            } catch (error) {
-                console.error('Error:', error);
-                addMessage('Sorry, something went wrong. Please try again.', 'gemini-message');
-            } finally {
-                // Re-enable form
-                showLoading(false);
-                sendButton.disabled = false;
-                input.focus();
-            }
-        });
+function addMessage(text, className) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `${className} message`;
+    msgDiv.textContent = text;
+    chatWindow.appendChild(msgDiv);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
 
-        function addMessage(text, className) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', className);
-            messageDiv.textContent = text;
-            chatWindow.appendChild(messageDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight; // Auto-scroll to the latest message
-        }
-
-        function showLoading(isLoading) {
-            let loadingIndicator = document.getElementById('loading-indicator');
-            if (isLoading) {
-                if (!loadingIndicator) {
-                    loadingIndicator = document.createElement('div');
-                    loadingIndicator.id = 'loading-indicator';
-                    loadingIndicator.classList.add('loading-indicator');
-                    loadingIndicator.textContent = 'Gemini is thinking...';
-                    chatWindow.appendChild(loadingIndicator);
-                    chatWindow.scrollTop = chatWindow.scrollHeight;
-                }
-            } else {
-                if (loadingIndicator) {
-                    loadingIndicator.remove();
-                }
-            }
-        }
-    </script>
+function goBack() {
+    history.back();
+}
+</script>
 
 </body>
 </html>

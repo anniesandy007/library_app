@@ -2,48 +2,66 @@
 <html>
 <head>
     <link rel="stylesheet" type="text/css" href="/css/admindash.css">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - Add Book</title>
 </head>
 <body>
-    
-    <div class="container">        
-        <form action="/admin-dashboard/add-book" method="post">
+
+<div class="container">
+
+    <!-- Left image -->
+    <div class="left">
+        <img src="/images/libraryimage.jpg" alt="Library Image">
+    </div>
+
+    <!-- Right popup form -->
+    <div class="right">
+        <h1>Create Book Detail</h1>
+
+        <form action="/admin-dashboard/add-book" method="post" class="form-table">
             <table>
-		<tr>
-                    <td><img src="/images/book1.jpeg" alt="Image 1" class="left-image"></td>
-                    <td><h1>Create Book Detail</h1></td>
+                <tr>
+                    <td><label for="bookID">Book ID:</label></td>
+                    <td><input type="number" name="bookID" id="bookID" required autocomplete="off"></td>
                 </tr>
                 <tr>
-                    <td><label for="Book_id">BookID:</label></td>
-                    <td><input type="number" name="Book_id" required autocomplete="off"></td>
+                    <td><label for="title">Title:</label></td>
+                    <td><input type="text" name="title" id="title" required autocomplete="off"></td>
                 </tr>
                 <tr>
-                    <td><label for="Book_name">Book Name:</label></td>
-                    <td><input type="text" name="Book_name" required autocomplete="off"></td>
+                    <td><label for="authors">Authors:</label></td>
+                    <td><input type="text" name="authors" id="authors" required autocomplete="off"></td>
                 </tr>
                 <tr>
-                    <td><label for="Author_name">Author Name:</label></td>
-                    <td><input type="text" name="Author_name" required autocomplete="off"></td>
+                    <td><label for="average_rating">Average Rating:</label></td>
+                    <td><input type="number" step="0.01" name="average_rating" id="average_rating" required autocomplete="off"></td>
                 </tr>
                 <tr>
-                    <td><label for="Price">Price:</label></td>
-                    <td><input type="text" name="Price" required autocomplete="off"></td>
+                    <td><label for="ratings_count">Ratings Count:</label></td>
+                    <td><input type="number" name="ratings_count" id="ratings_count" required autocomplete="off"></td>
                 </tr>
                 <tr>
-                    <td><label for="Age_group">Age Group:</label></td>
-                    <td><input type="text" name="Age_group" required autocomplete="off"></td>
+                    <td><label for="text_reviews_count">Text Reviews Count:</label></td>
+                    <td><input type="number" name="text_reviews_count" id="text_reviews_count" required autocomplete="off"></td>
                 </tr>
                 <tr>
-                    <td><label for="Book_type">Book Type:</label></td>
-                    <td><input type="text" name="Book_type" required autocomplete="off"></td>
+                    <td><label for="publication_date">Publication Date:</label></td>
+                    <td><input type="text" name="publication_date" id="publication_date" required autocomplete="off"></td>
+                </tr>
+                <tr>
+                    <td><label for="publisher">Publisher:</label></td>
+                    <td><input type="text" name="publisher" id="publisher" required autocomplete="off"></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td><button type="submit">Add Book</button></td>
                 </tr>
             </table>
-            
-            <div class="center-button-container">
-                <button class="center-button" type="submit">Add Book</button>
-            </div>
         </form>
+
+        <p><a href="/logout">Logout</a></p>
     </div>
-    <p><a href="/logout">Logout</a></p>
+
+</div>
+
 </body>
 </html>
